@@ -1,0 +1,48 @@
+name: Build and Release duplicacy-util
+
+on:
+  push:
+    tags:
+      - "v*" # Runs only when a tag starting with "v" is pushed, e.g. v1.5.2
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.24.4"
+
+      - name: Build binaries
+        run: |
+          GOOS=freebsd GOARCH=amd64 go build -o duplicacy-util_freebsd_x64_${GITHUB_REF#refs/tags/}
+          GOOS=linux GOARCH=arm go build -o duplicacy-util_linux_arm_${GITHUB_REF#refs/tags/}
+          GOOS=linux GOARCH=386 go build -o duplicacy-util_linux_i386_${GITHUB_REF#refs/tags/}
+          GOOS=linux GOARCH=amd64 go build -o duplicacy-util_linux_x64_${GITHUB_REF#refs/tags/}
+          GOOS=darwin GOARCH=amd64 go build -o duplicacy-util_osx_x64_${GITHUB_REF#refs/tags/}
+          GOOS=windows GOARCH=386 go build -o duplicacy-util_win_i386_${GITHUB_REF#refs/tags/}.exe
+          GOOS=windows GOARCH=amd64 go build -o duplicacy-util_win_x64_${GITHUB_REF#refs/tags/}.exe
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: |
+            duplicacy-util_freebsd_x64_${{ github.ref_name }}
+            duplicacy-util_linux_arm_${{ github.ref_name }}
+            duplicacy-util_linux_i386_${{ github.ref_name }}
+            duplicacy-util_linux_x64_${{ github.ref_name }}
+            duplicacy-util_osx_x64_${{ github.ref_name }}
+            duplicacy-util_win_i386_${{ github.ref_name }}.exe
+            duplicacy-util_win_x64_${{ github.ref_name }}.exe
